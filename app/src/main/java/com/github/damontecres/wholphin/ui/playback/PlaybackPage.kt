@@ -212,6 +212,11 @@ fun PlaybackPageContent(
         // If controller shows/hides, immediately cancel the skip indicator
         skipIndicatorDuration = 0L
     }
+    // While paused, suppress the auto-hide timer so the overlay stays on the still frame — but
+    // Back still hides it. showPlay == "player is paused".
+    LaunchedEffect(playPauseState.showPlay) {
+        controllerViewState.setKeepVisibleWhilePaused(playPauseState.showPlay)
+    }
     var skipPosition by remember { mutableLongStateOf(0L) }
     val updateSkipIndicator = { delta: Long ->
         if ((skipIndicatorDuration > 0 && delta < 0) || (skipIndicatorDuration < 0 && delta > 0)) {

@@ -24,6 +24,20 @@ class ControllerViewState internal constructor(
     private var _controlsVisible by mutableStateOf(false)
     val controlsVisible get() = _controlsVisible
 
+    // While the film is paused, the auto-hide timer is suppressed so the controls do not vanish
+    // on a still frame — but an explicit [hideControls] (Back) still works.
+    private var _keepVisibleWhilePaused by mutableStateOf(false)
+    val keepVisibleWhilePaused get() = _keepVisibleWhilePaused
+
+    /**
+     * Suppress only the auto-hide timer (e.g. while paused). Does not force the controls to
+     * appear and does not block [hideControls], so Back keeps working.
+     */
+    fun setKeepVisibleWhilePaused(value: Boolean) {
+        _keepVisibleWhilePaused = value
+        if (!value) pulseControls()
+    }
+
     fun showControls(milliseconds: Long = hideMilliseconds) {
         if (controlsEnabled) {
             _controlsVisible = true
@@ -45,7 +59,7 @@ class ControllerViewState internal constructor(
             .consumeAsFlow()
             .debounce { it }
             .collect {
-                _controlsVisible = false
+                if (!_keepVisibleWhilePaused) _controlsVisible = false
             }
     }
 }
