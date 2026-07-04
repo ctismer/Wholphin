@@ -27,6 +27,7 @@ import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -250,6 +251,24 @@ fun SeekBar(
             progress = player.currentPosition.toFloat() / player.duration
             delay(250L)
         }
+    }
+    // Event-driven: on a seek draw the scrubber at the new position immediately instead of
+    // waiting up to 250 ms for the next poll tick.
+    DisposableEffect(player) {
+        val listener =
+            object : Player.Listener {
+                override fun onPositionDiscontinuity(
+                    oldPosition: Player.PositionInfo,
+                    newPosition: Player.PositionInfo,
+                    reason: Int,
+                ) {
+                    position = newPosition.positionMs
+                    val dur = player.duration
+                    if (dur > 0L) progress = newPosition.positionMs.toFloat() / dur
+                }
+            }
+        player.addListener(listener)
+        onDispose { player.removeListener(listener) }
     }
     Column(
         modifier = modifier,
